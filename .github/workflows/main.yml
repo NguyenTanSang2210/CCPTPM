@@ -21,11 +21,13 @@ jobs:
         cache: maven
 
     - name: Build with Maven
-      run: chmod +x mvnw && ./mvnw clean package
+      # Thêm chmod để tránh lỗi "Permission denied" khi chạy mvnw
+      run: chmod +x mvnw && ./mvnw clean package -DskipTests
 
     - name: Login to Docker Hub
       uses: docker/login-action@v3
       with:
+        # Đảm bảo bạn đã tạo 2 secret này trong GitHub Settings
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
@@ -36,28 +38,26 @@ jobs:
 
     - name: Triển khai lên DevOps Classroom
       run: |
-        # Thông tin cấu hình
         REPO="nguyentansang04/duanjava"
         CONTAINER_PORT=80
         
-        # Gọi Webhook
+        # Gọi Webhook triển khai
         RESPONSE=$(curl -sS -w "\n%{http_code}" -X POST "${{ secrets.DEPLOY_URL }}?repo=$REPO&tag=latest&slot=5&container_port=$CONTAINER_PORT")
         
-        # Tách nội dung và HTTP Code
         BODY=$(echo "$RESPONSE" | sed '$d')
         CODE=$(echo "$RESPONSE" | tail -n1)
         
         echo "Webhook HTTP Status: $CODE"
         
         if [ "$CODE" -lt 200 ] || [ "$CODE" -ge 300 ]; then
-          echo "Deploy thất bại. Kiểm tra log chi tiết bên dưới."
-          echo "::group::Chi tiết webhook JSON"
+          echo "Deploy thất bại!"
+          echo "::group::Chi tiết lỗi từ Server"
           echo "$BODY" | python3 -m json.tool 2>/dev/null || echo "$BODY"
           echo "::endgroup::"
           exit 1
         fi
         
-        echo "Deploy thành công."
-        echo "::group::Chi tiết webhook JSON"
+        echo "Deploy thành công rực rỡ!"
+        echo "::group::Phản hồi từ Server"
         echo "$BODY" | python3 -m json.tool 2>/dev/null || echo "$BODY"
         echo "::endgroup::"
