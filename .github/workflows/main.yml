@@ -26,7 +26,7 @@ jobs:
 
     - name: Build Docker Image
       # Bước này chạy thử Dockerfile bạn đã viết để đảm bảo nó không lỗi
-      run: docker build -t nguyentansang/ccptpm:latest 
+      run: docker build -t nguyentansang/ccptpm:latest .
 
     - name: Triển khai lên DevOps Classroom
       run: |
